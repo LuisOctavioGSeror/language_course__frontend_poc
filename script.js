@@ -1,8 +1,10 @@
-// script.js — Front simples para /auth/token + /chat (sem API key no cliente)
+// script.js — Front separado (Vercel/Netlify/etc.) para FastAPI (/token + /chat).
+// Nada de API key no cliente; só Bearer JWT.
+
 (function () {
   "use strict";
 
-  // -------- helpers DOM --------
+  // ---------- DOM ----------
   const $ = (sel) => document.querySelector(sel);
 
   const chatEl = $("#chat");
@@ -20,13 +22,20 @@
   const loginBtn = $("#login");
   const logoutBtn = $("#logout");
 
-  // -------- estado --------
+  // ---------- state ----------
   let messages = [];
   let token = localStorage.getItem("token") || null;
 
-  // -------- persistência de config --------
+  // ---------- config ----------
+  const TOKEN_PATH = localStorage.getItem("tokenPath") || "/token"; // se seu login for /auth/token, salve isso como tokenPath
+
   function getApiBase() {
-    return (apiBaseEl && apiBaseEl.value.trim()) || localStorage.getItem("apiBase") || "http://localhost:8000";
+    const base =
+      (apiBaseEl && apiBaseEl.value.trim()) ||
+      localStorage.getItem("apiBase") ||
+      "http://localhost:8000";
+    // sem barra no fim
+    return base.replace(/\/$/, "");
   }
   function getProvider() {
     return (providerEl && providerEl.value.trim()) || localStorage.getItem("provider") || "";
@@ -35,8 +44,8 @@
     return (modelEl && modelEl.value.trim()) || localStorage.getItem("model") || "";
   }
 
-  // Carrega UI inicial
-  if (apiBaseEl) apiBaseEl.value = localStorage.getItem("apiBase") || "http://localhost:8000";
+  // UI inicial
+  if (apiBaseEl) apiBaseEl.value = localStorage.getItem("apiBase") || "https://languagecoursebackendpoc-production.up.railway.app/";
   if (providerEl) providerEl.value = localStorage.getItem("provider") || "";
   if (modelEl) modelEl.value = localStorage.getItem("model") || "";
 
@@ -45,17 +54,11 @@
       if (apiBaseEl) localStorage.setItem("apiBase", apiBaseEl.value.trim());
       if (providerEl) localStorage.setItem("provider", providerEl.value.trim());
       if (modelEl) localStorage.setItem("model", modelEl.value.trim());
-      toast("Configurações salvas.");
+      alert("Configurações salvas.");
     });
   }
 
-  // -------- UI utils --------
-  function toast(text) {
-    console.log("[toast]", text);
-    // simples: usa alert, se quiser algo melhor troque aqui
-    // alert(text);
-  }
-
+  // ---------- helpers ----------
   function append(role, content) {
     if (!chatEl) return;
     const div = document.createElement("div");
@@ -65,30 +68,29 @@
     chatEl.scrollTop = chatEl.scrollHeight;
   }
 
-  function setLoading(isLoading) {
-    if (sendBtn) {
-      sendBtn.disabled = isLoading;
-      sendBtn.textContent = isLoading ? "Enviando…" : "Enviar";
-    }
+  function setLoading(b) {
+    if (!sendBtn) return;
+    sendBtn.disabled = b;
+    sendBtn.textContent = b ? "Enviando…" : "Enviar";
   }
 
   function setAuthState(logged) {
-    // Habilite/desabilite controles se quiser
-    if (logged) {
-      toast("Logado.");
-      if (logoutBtn) logoutBtn.disabled = false;
-      if (loginBtn) loginBtn.disabled = true;
-    } else {
-      toast("Não autenticado.");
-      if (logoutBtn) logoutBtn.disabled = true;
-      if (loginBtn) loginBtn.disabled = false;
+    if (logoutBtn) logoutBtn.disabled = !logged;
+    if (loginBtn) loginBtn.disabled = logged;
+  }
+
+  function ensureScheme(url) {
+    // dica: se o usuário digitar só domínio, não funciona; precisa http(s)
+    if (!/^https?:\/\//i.test(url)) {
+      throw new Error(`API Base inválida: "${url}". Use http(s)://...`);
     }
   }
 
-  // -------- HTTP wrapper --------
+  // ---------- HTTP ----------
   async function request(path, { method = "GET", headers = {}, body, form = false } = {}) {
-    const apiBase = getApiBase().replace(/\/$/, "");
-    const url = apiBase + path;
+    const base = getApiBase();
+    ensureScheme(base);
+    const url = base + path;
 
     const h = { ...headers };
     if (!form) h["Content-Type"] = h["Content-Type"] || "application/json";
@@ -98,32 +100,31 @@
       method,
       headers: h,
       body: form ? body : body ? JSON.stringify(body) : undefined,
-      credentials: "include", // útil se usar cookies no futuro
+      // sem cookies -> sem credentials:'include'
     };
 
-    const res = await fetch(url, init);
-    if (!res.ok) {
-      let errText;
-      try {
-        errText = await res.text();
-      } catch {
-        errText = `${res.status} ${res.statusText}`;
+    try {
+      const res = await fetch(url, init);
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        const err = new Error(`${res.status} ${res.statusText}${txt ? `: ${txt}` : ""}`);
+        err.status = res.status;
+        throw err;
       }
-      const e = new Error(errText);
-      e.status = res.status;
-      throw e;
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) return await res.json();
+      return await res.text();
+    } catch (e) {
+      // CORS/URL/protocolo caem como TypeError; deixa mensagem amigável
+      const msg = (e && e.message) || String(e);
+      throw new Error(`Falha ao chamar ${url}. Verifique API Base/CORS/HTTPS. Detalhe: ${msg}`);
     }
-    // Tenta JSON; se falhar, devolve texto
-    const ct = res.headers.get("content-type") || "";
-    if (ct.includes("application/json")) return await res.json();
-    return await res.text();
   }
 
-  // -------- auth --------
+  // ---------- auth ----------
   async function login(email, password) {
     const body = new URLSearchParams({ username: email, password });
-    // OAuth2PasswordRequestForm exige form-encoded
-    const data = await request("/auth/token", {
+    const data = await request(TOKEN_PATH, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
@@ -132,37 +133,32 @@
     token = data.access_token;
     localStorage.setItem("token", token);
     setAuthState(true);
+    append("assistant", "✅ Login realizado.");
   }
 
   function logout() {
     token = null;
     localStorage.removeItem("token");
     setAuthState(false);
+    append("assistant", "👋 Você saiu.");
   }
 
   async function ensureLogged() {
     if (token) return true;
 
-    // Se existir UI de login, espera o clique do usuário
     if (emailEl && passwordEl && loginBtn) {
-      toast("Faça login para continuar.");
+      append("assistant", "⚠️ Faça login para continuar.");
       return false;
     }
-
-    // fallback: prompt
+    // fallback (se não tiver UI de login)
     const email = prompt("Email:");
     const pw = prompt("Senha:");
     if (!email || !pw) return false;
-    try {
-      await login(email, pw);
-      return true;
-    } catch (e) {
-      append("assistant", "⚠️ Falha no login: " + (e.message || e.toString()));
-      return false;
-    }
+    await login(email, pw);
+    return true;
   }
 
-  // -------- chat --------
+  // ---------- chat ----------
   async function send() {
     const text = (inputEl && inputEl.value.trim()) || "";
     if (!text) return;
@@ -181,22 +177,17 @@
       const body = { messages };
       const provider = getProvider();
       const model = getModel();
-      if (provider) body.provider = provider; // não envia null
+      if (provider) body.provider = provider; // não enviar null
       if (model) body.model = model;
 
-      const data = await request("/chat", {
-        method: "POST",
-        body,
-      });
-
+      const data = await request("/chat", { method: "POST", body });
       const answer = data.answer || (typeof data === "string" ? data : "");
       append("assistant", answer);
       messages.push({ role: "assistant", content: answer });
     } catch (e) {
       if (e.status === 401) {
-        // token inválido/expirado: limpa e tenta de novo
         logout();
-        append("assistant", "⚠️ Sessão expirada. Faça login novamente.");
+        append("assistant", "⚠️ Sessão expirada/ inválida. Faça login novamente.");
       } else {
         append("assistant", "⚠️ Erro: " + (e.message || e.toString()));
       }
@@ -206,7 +197,7 @@
     }
   }
 
-  // -------- eventos UI --------
+  // ---------- eventos ----------
   if (sendBtn) sendBtn.addEventListener("click", send);
   if (inputEl) {
     inputEl.addEventListener("keydown", (e) => {
@@ -226,15 +217,11 @@
       }
     });
   }
-
   if (loginBtn) {
     loginBtn.addEventListener("click", async () => {
       const email = emailEl ? emailEl.value.trim() : "";
       const pw = passwordEl ? passwordEl.value.trim() : "";
-      if (!email || !pw) {
-        toast("Preencha email e senha.");
-        return;
-      }
+      if (!email || !pw) return append("assistant", "⚠️ Preencha email e senha.");
       try {
         await login(email, pw);
       } catch (e) {
@@ -244,8 +231,7 @@
   }
   if (logoutBtn) logoutBtn.addEventListener("click", logout);
 
-  // -------- bootstrap --------
+  // ---------- bootstrap ----------
   setAuthState(!!token);
 })();
-
 
