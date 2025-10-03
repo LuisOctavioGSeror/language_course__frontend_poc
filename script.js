@@ -35,7 +35,7 @@
     return (
       (apiBaseEl && apiBaseEl.value.trim()) ||
       localStorage.getItem("apiBase") ||
-      "https://languagecoursebackendpoc-production.up.railway.app/"
+      "http://localhost:8000"
     ).replace(/\/$/, "");
   }
   function getProvider() {
@@ -46,7 +46,7 @@
   }
 
   // UI inicial
-  if (apiBaseEl) apiBaseEl.value = localStorage.getItem("apiBase") || "http://localhost:8000";
+  if (apiBaseEl) apiBaseEl.value = localStorage.getItem("apiBase") || "https://languagecoursebackendpoc-production.up.railway.app/";
   if (providerEl) providerEl.value = localStorage.getItem("provider") || "";
   if (modelEl) modelEl.value = localStorage.getItem("model") || "";
 
@@ -221,6 +221,11 @@
     });
   }
   if (logoutBtn) logoutBtn.addEventListener("click", logout);
+
+  // bootstrap
+  setAuthState(!!token);
+})();
+
 
   // bootstrap
   setAuthState(!!token);
