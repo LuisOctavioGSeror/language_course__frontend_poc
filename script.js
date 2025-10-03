@@ -41,7 +41,7 @@
   }
 
   // UI inicial
-  if (apiBaseEl) apiBaseEl.value = localStorage.getItem("apiBase") || "languagecoursebackendpoc-production.up.railway.app";
+  if (apiBaseEl) apiBaseEl.value = localStorage.getItem("apiBase") || "https://languagecoursebackendpoc-production.up.railway.app/";
   if (providerEl) providerEl.value = localStorage.getItem("provider") || "";
   if (modelEl) modelEl.value = localStorage.getItem("model") || "";
 
