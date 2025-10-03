@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MCP Chat • Front simples</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>MCP Chat</h1>
+        <div class="settings">
+          <label>API Base
+            <input id="apiBase" placeholder="http://localhost:8000" />
+          </label>
+          <label>X-API-Key (opcional)
+            <input id="apiKey" placeholder="sua-api-key (se exigido)" />
+          </label>
+          <label>Provider
+            <select id="provider">
+              <option value="">auto (.env)</option>
+              <option value="openai">openai</option>
+              <option value="anthropic">anthropic</option>
+            </select>
+          </label>
+          <label>Model
+            <input id="model" placeholder="gpt-4o-mini ou claude-3-7-sonnet-latest" />
+          </label>
+          <button id="save">Salvar</button>
+        </div>
+      </header>
+
+      <main id="chat"></main>
+
+      <footer>
+        <textarea id="input" rows="2" placeholder="Digite sua mensagem e aperte Enter…"></textarea>
+        <button id="send">Enviar</button>
+        <button id="clear">Novo chat</button>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
