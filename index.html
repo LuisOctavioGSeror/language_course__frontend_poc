@@ -1,44 +1,99 @@
 <!doctype html>
 <html lang="pt-br">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MCP Chat • Front simples</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>MCP Chat • Front</title>
+    <style>
+      :root { --border:#e5e7eb; --muted:#6b7280; --bg:#fff; --chip:#f3f4f6; }
+      * { box-sizing: border-box; }
+      html,body { height: 100%; }
+      body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell; background:#fafafa; color:#111827; }
+      .app { max-width: 900px; margin: 24px auto; padding: 0 16px; display:flex; flex-direction:column; gap:16px; }
+      header { display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px; }
+      h1 { margin:0; font-size: 22px; }
+      .settings, .auth { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+      label { display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted); }
+      input, select, textarea { padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:#111; min-width:220px; }
+      input[type="password"] { font-family: inherit; }
+      button { padding:10px 14px; border:1px solid var(--border); background:#fff; border-radius:10px; cursor:pointer; }
+      button[disabled]{ opacity:.6; cursor:not-allowed; }
+      .row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+      .hint { font-size:12px; color:var(--muted); }
+      main#chat { background:var(--bg); border:1px solid var(--border); border-radius:14px; min-height:420px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+      .msg { max-width:80%; padding:10px 12px; border-radius:12px; white-space:pre-wrap; line-height:1.45; }
+      .user { align-self:flex-end; background:#e9f0ff; border:1px solid #d8e6ff; }
+      .assistant { align-self:flex-start; background:#f6f6f6; border:1px solid #eee; }
+      footer { display:flex; gap:10px; }
+      textarea#input { flex:1; resize:vertical; min-height:44px; }
+      .chips { display:flex; gap:8px; flex-wrap:wrap; }
+      .chip { padding:6px 10px; border-radius:999px; background:var(--chip); font-size:12px; border:1px solid var(--border);}
+    </style>
   </head>
   <body>
     <div class="app">
       <header>
         <h1>MCP Chat</h1>
         <div class="settings">
-          <label>API Base
-            <input id="apiBase" placeholder="http://localhost:8000" />
+          <label>
+            API Base
+            <!-- Ex.: https://seu-servico.up.railway.app -->
+            <input id="apiBase" placeholder="https://seu-backend" />
           </label>
-          <label>X-API-Key (opcional)
-            <input id="apiKey" placeholder="sua-api-key (se exigido)" />
-          </label>
-          <label>Provider
+          <label>
+            Provider
             <select id="provider">
               <option value="">auto (.env)</option>
               <option value="openai">openai</option>
               <option value="anthropic">anthropic</option>
+              <option value="groq">groq</option>
             </select>
           </label>
-          <label>Model
-            <input id="model" placeholder="gpt-4o-mini ou claude-3-7-sonnet-latest" />
+          <label>
+            Model
+            <input id="model" placeholder="gpt-4o-mini, claude-3-7..., llama-3.3..." />
           </label>
           <button id="save">Salvar</button>
         </div>
+        <div class="auth">
+          <label>
+            Email
+            <input id="email" type="email" placeholder="voce@exemplo.com" />
+          </label>
+          <label>
+            Senha
+            <input id="password" type="password" placeholder="••••••••" />
+          </label>
+          <button id="login">Login</button>
+          <button id="logout" disabled>Sair</button>
+        </div>
       </header>
+
+      <div class="row">
+        <div class="chips">
+          <span class="chip hint">Use /token para login</span>
+          <span class="chip hint">/chat usa Bearer JWT</span>
+          <span class="chip hint">Provider/Model são opcionais</span>
+        </div>
+      </div>
 
       <main id="chat"></main>
 
       <footer>
-        <textarea id="input" rows="2" placeholder="Digite sua mensagem e aperte Enter…"></textarea>
+        <textarea id="input" placeholder="Digite sua mensagem e Enter para enviar…"></textarea>
         <button id="send">Enviar</button>
         <button id="clear">Novo chat</button>
       </footer>
     </div>
+
+    <!-- Seu JS com o fluxo: /token + /chat (Bearer) -->
+    <script src="script.js"></script>
+  </body>
+</html>
+
 
     <script src="script.js"></script>
   </body>
