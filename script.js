@@ -1,8 +1,8 @@
-// Front simples: login em /auth/token (OAuth2) + POST /chat (Bearer JWT).
+// script.js — Front simples para /auth/token + /chat (sem API key no cliente)
 (function () {
   "use strict";
 
-  // ---------- DOM ----------
+  // -------- helpers DOM --------
   const $ = (sel) => document.querySelector(sel);
 
   const chatEl = $("#chat");
@@ -20,18 +20,13 @@
   const loginBtn = $("#login");
   const logoutBtn = $("#logout");
 
-  // ---------- state ----------
+  // -------- estado --------
   let messages = [];
   let token = localStorage.getItem("token") || null;
 
-  // ---------- config ----------
+  // -------- persistência de config --------
   function getApiBase() {
-    // precisa ter http:// ou https://
-    return (
-      (apiBaseEl && apiBaseEl.value.trim()) ||
-      localStorage.getItem("apiBase") ||
-      "http://localhost:8000"
-    );
+    return (apiBaseEl && apiBaseEl.value.trim()) || localStorage.getItem("apiBase") || "http://localhost:8000";
   }
   function getProvider() {
     return (providerEl && providerEl.value.trim()) || localStorage.getItem("provider") || "";
@@ -40,8 +35,8 @@
     return (modelEl && modelEl.value.trim()) || localStorage.getItem("model") || "";
   }
 
-  // UI inicial
-  if (apiBaseEl) apiBaseEl.value = localStorage.getItem("apiBase") || "https://languagecoursebackendpoc-production.up.railway.app/";
+  // Carrega UI inicial
+  if (apiBaseEl) apiBaseEl.value = localStorage.getItem("apiBase") || "http://localhost:8000";
   if (providerEl) providerEl.value = localStorage.getItem("provider") || "";
   if (modelEl) modelEl.value = localStorage.getItem("model") || "";
 
@@ -54,10 +49,13 @@
     });
   }
 
-  // ---------- UI helpers ----------
+  // -------- UI utils --------
   function toast(text) {
     console.log("[toast]", text);
+    // simples: usa alert, se quiser algo melhor troque aqui
+    // alert(text);
   }
+
   function append(role, content) {
     if (!chatEl) return;
     const div = document.createElement("div");
@@ -66,18 +64,28 @@
     chatEl.appendChild(div);
     chatEl.scrollTop = chatEl.scrollHeight;
   }
-  function setLoading(b) {
+
+  function setLoading(isLoading) {
     if (sendBtn) {
-      sendBtn.disabled = b;
-      sendBtn.textContent = b ? "Enviando…" : "Enviar";
+      sendBtn.disabled = isLoading;
+      sendBtn.textContent = isLoading ? "Enviando…" : "Enviar";
     }
   }
+
   function setAuthState(logged) {
-    if (logoutBtn) logoutBtn.disabled = !logged;
-    if (loginBtn) loginBtn.disabled = logged;
+    // Habilite/desabilite controles se quiser
+    if (logged) {
+      toast("Logado.");
+      if (logoutBtn) logoutBtn.disabled = false;
+      if (loginBtn) loginBtn.disabled = true;
+    } else {
+      toast("Não autenticado.");
+      if (logoutBtn) logoutBtn.disabled = true;
+      if (loginBtn) loginBtn.disabled = false;
+    }
   }
 
-  // ---------- HTTP wrapper ----------
+  // -------- HTTP wrapper --------
   async function request(path, { method = "GET", headers = {}, body, form = false } = {}) {
     const apiBase = getApiBase().replace(/\/$/, "");
     const url = apiBase + path;
@@ -89,32 +97,32 @@
     const init = {
       method,
       headers: h,
-      // importante: SEM credentials:'include' (evita CORS extra se você não usa cookies)
       body: form ? body : body ? JSON.stringify(body) : undefined,
+      credentials: "include", // útil se usar cookies no futuro
     };
 
-    try {
-      const res = await fetch(url, init);
-      // se CORS bloquear, cai no catch abaixo (TypeError: Failed to fetch)
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        const err = new Error(`${res.status} ${res.statusText}${text ? `: ${text}` : ""}`);
-        err.status = res.status;
-        throw err;
+    const res = await fetch(url, init);
+    if (!res.ok) {
+      let errText;
+      try {
+        errText = await res.text();
+      } catch {
+        errText = `${res.status} ${res.statusText}`;
       }
-      const ct = res.headers.get("content-type") || "";
-      if (ct.includes("application/json")) return await res.json();
-      return await res.text();
-    } catch (e) {
-      // mensagem mais útil p/ CORS/URL incorreta
-      console.error("fetch error:", e);
-      throw new Error(`Failed to fetch ${url}. Dica: verifique API Base, CORS e HTTPS/HTTP.`);
+      const e = new Error(errText);
+      e.status = res.status;
+      throw e;
     }
+    // Tenta JSON; se falhar, devolve texto
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) return await res.json();
+    return await res.text();
   }
 
-  // ---------- auth ----------
+  // -------- auth --------
   async function login(email, password) {
     const body = new URLSearchParams({ username: email, password });
+    // OAuth2PasswordRequestForm exige form-encoded
     const data = await request("/auth/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -125,29 +133,36 @@
     localStorage.setItem("token", token);
     setAuthState(true);
   }
+
   function logout() {
     token = null;
     localStorage.removeItem("token");
     setAuthState(false);
   }
+
   async function ensureLogged() {
     if (token) return true;
 
-    // Se existir UI de login
+    // Se existir UI de login, espera o clique do usuário
     if (emailEl && passwordEl && loginBtn) {
       toast("Faça login para continuar.");
       return false;
     }
 
-    // fallback em prompt
+    // fallback: prompt
     const email = prompt("Email:");
     const pw = prompt("Senha:");
     if (!email || !pw) return false;
-    await login(email, pw);
-    return true;
+    try {
+      await login(email, pw);
+      return true;
+    } catch (e) {
+      append("assistant", "⚠️ Falha no login: " + (e.message || e.toString()));
+      return false;
+    }
   }
 
-  // ---------- chat ----------
+  // -------- chat --------
   async function send() {
     const text = (inputEl && inputEl.value.trim()) || "";
     if (!text) return;
@@ -162,25 +177,36 @@
         setLoading(false);
         return;
       }
+
       const body = { messages };
       const provider = getProvider();
       const model = getModel();
-      if (provider) body.provider = provider;
+      if (provider) body.provider = provider; // não envia null
       if (model) body.model = model;
 
-      const data = await request("/chat", { method: "POST", body });
+      const data = await request("/chat", {
+        method: "POST",
+        body,
+      });
+
       const answer = data.answer || (typeof data === "string" ? data : "");
       append("assistant", answer);
       messages.push({ role: "assistant", content: answer });
     } catch (e) {
-      append("assistant", "⚠️ " + (e.message || e.toString()));
+      if (e.status === 401) {
+        // token inválido/expirado: limpa e tenta de novo
+        logout();
+        append("assistant", "⚠️ Sessão expirada. Faça login novamente.");
+      } else {
+        append("assistant", "⚠️ Erro: " + (e.message || e.toString()));
+      }
     } finally {
       setLoading(false);
       if (inputEl) inputEl.focus();
     }
   }
 
-  // ---------- eventos ----------
+  // -------- eventos UI --------
   if (sendBtn) sendBtn.addEventListener("click", send);
   if (inputEl) {
     inputEl.addEventListener("keydown", (e) => {
@@ -200,14 +226,17 @@
       }
     });
   }
+
   if (loginBtn) {
     loginBtn.addEventListener("click", async () => {
       const email = emailEl ? emailEl.value.trim() : "";
       const pw = passwordEl ? passwordEl.value.trim() : "";
-      if (!email || !pw) return append("assistant", "⚠️ Preencha email e senha.");
+      if (!email || !pw) {
+        toast("Preencha email e senha.");
+        return;
+      }
       try {
         await login(email, pw);
-        append("assistant", "✅ Login ok.");
       } catch (e) {
         append("assistant", "⚠️ Falha no login: " + (e.message || e.toString()));
       }
@@ -215,6 +244,7 @@
   }
   if (logoutBtn) logoutBtn.addEventListener("click", logout);
 
+  // -------- bootstrap --------
   setAuthState(!!token);
 })();
 
