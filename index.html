@@ -13,7 +13,6 @@
     <ul>
       <li><a href="#" onclick="document.getElementById('apiBase').focus()">Config</a></li>
       <li><a href="#" onclick="document.getElementById('email').focus()">Login</a></li>
-      <li><a target="_blank" rel="noreferrer" href="https://languagecoursefrontendpoc-production.up.railway.app">App</a></li>
     </ul>
   </nav>
 
@@ -26,25 +25,25 @@
       <div class="square" style="--i:3;"></div>
       <div class="square" style="--i:4;"></div>
 
-      <!-- CARD 1: Login + Config -->
-      <div class="container">
-        <div class="form">
-          <h2>Entrar</h2>
+      <!-- UMA ÚNICA BOX: login + config + chat -->
+      <div class="container chat">
+        <div class="form chat-wrap">
+          <h2>Sisa • Chat</h2>
 
           <!-- Login -->
-          <div class="inputBox">
-            <input id="email" type="email" placeholder="Email" autocomplete="username" />
-          </div>
-          <div class="inputBox">
-            <input id="password" type="password" placeholder="Senha" autocomplete="current-password" />
-          </div>
-          <div class="inputRow" style="margin-top:10px;">
+          <div class="inputRow">
+            <div class="inputBox" style="flex:1; min-width:200px;">
+              <input id="email" type="email" placeholder="Email" autocomplete="username" />
+            </div>
+            <div class="inputBox" style="flex:1; min-width:180px;">
+              <input id="password" type="password" placeholder="Senha" autocomplete="current-password" />
+            </div>
             <button id="login" class="btn">Login</button>
             <button id="logout" class="btn secondary" disabled>Sair</button>
           </div>
 
-          <!-- Config (API Base / Provider / Model) -->
-          <div class="inputBox" style="margin-top:18px;">
+          <!-- Config -->
+          <div class="inputBox" style="margin-top:10px;">
             <details>
               <summary class="forget">Configurações (API Base, Provider, Modelo)</summary>
               <div class="inputBox" style="margin-top:10px;">
@@ -67,16 +66,7 @@
             </details>
           </div>
 
-          <p class="forget" style="margin-top:10px;">
-            Dica: /token faz login e /chat usa Bearer JWT (sem API key no front).
-          </p>
-        </div>
-      </div>
-
-      <!-- CARD 2: Chat -->
-      <div class="container chat">
-        <div class="form chat-wrap">
-          <h2>Chat</h2>
+          <!-- Chat -->
           <main id="chat"></main>
           <div class="controls">
             <div class="inputBox" style="flex:1;">
@@ -86,6 +76,10 @@
             <button id="sendStream" class="btn">Streaming</button>
             <button id="clear" class="btn secondary">Novo chat</button>
           </div>
+
+          <p class="forget" style="margin-top:6px;">
+            Dica: /token faz login e /chat usa Bearer JWT (sem API key no front).
+          </p>
         </div>
       </div>
     </div>
@@ -100,23 +94,13 @@
     </div>
   </footer>
 
-  <!-- Garanta que o script está na mesma pasta -->
+  <!-- Ajuste o path do login se necessário -->
   <script>
-    // Se seu login for /auth/token, troque aqui:
+    // Se seu endpoint for /auth/token, troque aqui:
     localStorage.setItem("tokenPath", "/token");
   </script>
   <script src="script.js"></script>
-  <script>
-    // (opcional) habilitar botão Streaming se seu backend já tiver /chat/stream
-    const streamBtn = document.getElementById('sendStream');
-    if (!streamBtn) return;
-    if (typeof sendStream !== 'function') {
-      streamBtn.disabled = true;
-      streamBtn.title = 'Backend sem /chat/stream';
-    } else {
-      streamBtn.addEventListener('click', sendStream);
-    }
-  </script>
 </body>
 </html>
+
 
