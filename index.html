@@ -73,7 +73,6 @@
               <textarea id="input" placeholder="Digite sua mensagem e aperte Enter…"></textarea>
             </div>
             <button id="send" class="btn">Enviar</button>
-            <button id="sendStream" class="btn">Streaming</button>
             <button id="clear" class="btn secondary">Novo chat</button>
           </div>
 
@@ -82,25 +81,24 @@
           </p>
         </div>
       </div>
+
+      <!-- FOOTER dentro da seção (usa o mesmo fundo) -->
+      <footer class="app-footer">
+        <div>© 2025 • Sisa</div>
+        <div class="social-links">
+          <a href="#" aria-label="Twitter">𝕏</a>
+          <a href="#" aria-label="GitHub">GH</a>
+          <a href="#" aria-label="LinkedIn">in</a>
+        </div>
+      </footer>
     </div>
   </section>
 
-  <footer>
-    <div>© 2025 • Sisa</div>
-    <div class="social-links">
-      <a href="#" aria-label="Twitter">𝕏</a>
-      <a href="#" aria-label="GitHub">GH</a>
-      <a href="#" aria-label="LinkedIn">in</a>
-    </div>
-  </footer>
-
   <!-- Ajuste o path do login se necessário -->
   <script>
-    // Se seu endpoint for /auth/token, troque aqui:
     localStorage.setItem("tokenPath", "/token");
   </script>
   <script src="script.js"></script>
 </body>
 </html>
-
 
