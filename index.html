@@ -1,100 +1,122 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <title>MCP Chat • Front</title>
-    <style>
-      :root { --border:#e5e7eb; --muted:#6b7280; --bg:#fff; --chip:#f3f4f6; }
-      * { box-sizing: border-box; }
-      html,body { height: 100%; }
-      body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell; background:#fafafa; color:#111827; }
-      .app { max-width: 900px; margin: 24px auto; padding: 0 16px; display:flex; flex-direction:column; gap:16px; }
-      header { display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px; }
-      h1 { margin:0; font-size: 22px; }
-      .settings, .auth { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
-      label { display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted); }
-      input, select, textarea { padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:#111; min-width:220px; }
-      input[type="password"] { font-family: inherit; }
-      button { padding:10px 14px; border:1px solid var(--border); background:#fff; border-radius:10px; cursor:pointer; }
-      button[disabled]{ opacity:.6; cursor:not-allowed; }
-      .row { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
-      .hint { font-size:12px; color:var(--muted); }
-      main#chat { background:var(--bg); border:1px solid var(--border); border-radius:14px; min-height:420px; padding:14px; display:flex; flex-direction:column; gap:10px; }
-      .msg { max-width:80%; padding:10px 12px; border-radius:12px; white-space:pre-wrap; line-height:1.45; }
-      .user { align-self:flex-end; background:#e9f0ff; border:1px solid #d8e6ff; }
-      .assistant { align-self:flex-start; background:#f6f6f6; border:1px solid #eee; }
-      footer { display:flex; gap:10px; }
-      textarea#input { flex:1; resize:vertical; min-height:44px; }
-      .chips { display:flex; gap:8px; flex-wrap:wrap; }
-      .chip { padding:6px 10px; border-radius:999px; background:var(--chip); font-size:12px; border:1px solid var(--border);}
-    </style>
-  </head>
-  <body>
-    <div class="app">
-      <header>
-        <h1>MCP Chat</h1>
-        <div class="settings">
-          <label>
-            API Base
-            <!-- Ex.: https://seu-servico.up.railway.app -->
-            <input id="apiBase" placeholder="https://seu-backend" />
-          </label>
-          <label>
-            Provider
-            <select id="provider">
-              <option value="">auto (.env)</option>
-              <option value="openai">openai</option>
-              <option value="anthropic">anthropic</option>
-              <option value="groq">groq</option>
-            </select>
-          </label>
-          <label>
-            Model
-            <input id="model" placeholder="gpt-4o-mini, claude-3-7..., llama-3.3..." />
-          </label>
-          <button id="save">Salvar</button>
-        </div>
-        <div class="auth">
-          <label>
-            Email
-            <input id="email" type="email" placeholder="voce@exemplo.com" />
-          </label>
-          <label>
-            Senha
-            <input id="password" type="password" placeholder="••••••••" />
-          </label>
-          <button id="login">Login</button>
-          <button id="logout" disabled>Sair</button>
-        </div>
-      </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sisa • MCP Chat</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="logo">Sisa • MCP Chat</div>
+    <ul>
+      <li><a href="#" onclick="document.getElementById('apiBase').focus()">Config</a></li>
+      <li><a href="#" onclick="document.getElementById('email').focus()">Login</a></li>
+      <li><a target="_blank" rel="noreferrer" href="https://languagecoursefrontendpoc-production.up.railway.app">App</a></li>
+    </ul>
+  </nav>
 
-      <div class="row">
-        <div class="chips">
-          <span class="chip hint">Use /token para login</span>
-          <span class="chip hint">/chat usa Bearer JWT</span>
-          <span class="chip hint">Provider/Model são opcionais</span>
+  <section>
+    <!-- BG squares -->
+    <div class="box">
+      <div class="square" style="--i:0;"></div>
+      <div class="square" style="--i:1;"></div>
+      <div class="square" style="--i:2;"></div>
+      <div class="square" style="--i:3;"></div>
+      <div class="square" style="--i:4;"></div>
+
+      <!-- CARD 1: Login + Config -->
+      <div class="container">
+        <div class="form">
+          <h2>Entrar</h2>
+
+          <!-- Login -->
+          <div class="inputBox">
+            <input id="email" type="email" placeholder="Email" autocomplete="username" />
+          </div>
+          <div class="inputBox">
+            <input id="password" type="password" placeholder="Senha" autocomplete="current-password" />
+          </div>
+          <div class="inputRow" style="margin-top:10px;">
+            <button id="login" class="btn">Login</button>
+            <button id="logout" class="btn secondary" disabled>Sair</button>
+          </div>
+
+          <!-- Config (API Base / Provider / Model) -->
+          <div class="inputBox" style="margin-top:18px;">
+            <details>
+              <summary class="forget">Configurações (API Base, Provider, Modelo)</summary>
+              <div class="inputBox" style="margin-top:10px;">
+                <input id="apiBase" placeholder="https://languagecoursebackendpoc-production.up.railway.app" />
+              </div>
+              <div class="inputRow">
+                <div class="inputBox" style="flex:1; min-width:180px;">
+                  <select id="provider">
+                    <option value="">auto (.env)</option>
+                    <option value="openai">openai</option>
+                    <option value="anthropic">anthropic</option>
+                    <option value="groq">groq</option>
+                  </select>
+                </div>
+                <div class="inputBox" style="flex:2; min-width:220px;">
+                  <input id="model" placeholder="gpt-4o-mini / claude-3-7... / llama-3.3-70b..." />
+                </div>
+                <button id="save" class="btn">Salvar</button>
+              </div>
+            </details>
+          </div>
+
+          <p class="forget" style="margin-top:10px;">
+            Dica: /token faz login e /chat usa Bearer JWT (sem API key no front).
+          </p>
         </div>
       </div>
 
-      <main id="chat"></main>
-
-      <footer>
-        <textarea id="input" placeholder="Digite sua mensagem e Enter para enviar…"></textarea>
-        <button id="send">Enviar</button>
-        <button id="clear">Novo chat</button>
-      </footer>
+      <!-- CARD 2: Chat -->
+      <div class="container chat">
+        <div class="form chat-wrap">
+          <h2>Chat</h2>
+          <main id="chat"></main>
+          <div class="controls">
+            <div class="inputBox" style="flex:1;">
+              <textarea id="input" placeholder="Digite sua mensagem e aperte Enter…"></textarea>
+            </div>
+            <button id="send" class="btn">Enviar</button>
+            <button id="sendStream" class="btn">Streaming</button>
+            <button id="clear" class="btn secondary">Novo chat</button>
+          </div>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <!-- Seu JS com o fluxo: /token + /chat (Bearer) -->
-    <script src="script.js"></script>
-  </body>
+  <footer>
+    <div>© 2025 • Sisa</div>
+    <div class="social-links">
+      <a href="#" aria-label="Twitter">𝕏</a>
+      <a href="#" aria-label="GitHub">GH</a>
+      <a href="#" aria-label="LinkedIn">in</a>
+    </div>
+  </footer>
+
+  <!-- Garanta que o script está na mesma pasta -->
+  <script>
+    // Se seu login for /auth/token, troque aqui:
+    localStorage.setItem("tokenPath", "/token");
+  </script>
+  <script src="script.js"></script>
+  <script>
+    // (opcional) habilitar botão Streaming se seu backend já tiver /chat/stream
+    const streamBtn = document.getElementById('sendStream');
+    if (!streamBtn) return;
+    if (typeof sendStream !== 'function') {
+      streamBtn.disabled = true;
+      streamBtn.title = 'Backend sem /chat/stream';
+    } else {
+      streamBtn.addEventListener('click', sendStream);
+    }
+  </script>
+</body>
 </html>
 
-
-    <script src="script.js"></script>
-  </body>
-</html>
